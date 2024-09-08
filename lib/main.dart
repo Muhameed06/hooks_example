@@ -12,19 +12,36 @@ void main() {
   ));
 }
 
-Stream<String> getTime() => Stream.periodic(
-      const Duration(seconds: 1),
-      (_) => DateTime.now().toIso8601String(),
-);
-
 class HomePage extends HookWidget {
   const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final dateTime = useStream(getTime());
+    final controller = useTextEditingController();
+    final text = useState('');
+
+    useEffect(() {
+      controller.addListener(() {
+        text.value = controller.text;
+      });
+      return null;
+    }, [controller]);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(dateTime.data ?? 'Home page'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        title: const Text(
+          'Home page',
+        ),
+      ),
+      body: Column(
+        children: [
+          TextField(
+            controller: controller,
+          ),
+          Text('You typed: ${text.value}')
+        ],
       ),
     );
   }
