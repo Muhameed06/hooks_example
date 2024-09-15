@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
@@ -15,7 +14,8 @@ void main() {
   ));
 }
 
-const url = 'https://media.istockphoto.com/id/1069539210/photo/fantastic-autumn-sunset-of-hintersee-lake.jpg?s=612x612&w=0&k=20&c=oqKJzUgnjNQi-nSJpAxouNli_Xl6nY7KwLBjArXr_GE=';
+const url =
+    'https://media.istockphoto.com/id/1069539210/photo/fantastic-autumn-sunset-of-hintersee-lake.jpg?s=612x612&w=0&k=20&c=oqKJzUgnjNQi-nSJpAxouNli_Xl6nY7KwLBjArXr_GE=';
 const imageHeight = 300.0;
 
 class HomePage extends HookWidget {
@@ -23,30 +23,12 @@ class HomePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final opacity = useAnimationController(
-        duration: const Duration(seconds: 1),
-        initialValue: 1.0,
-        lowerBound: 0.0,
-        upperBound: 1.0);
-
-    final size = useAnimationController(
-        duration: const Duration(seconds: 1),
-        initialValue: 1.0,
-        lowerBound: 0.0,
-        upperBound: 1.0);
-
-    final scrollController = useScrollController();
-
-    useEffect(() {
-      scrollController.addListener(() {
-        final newOpacity = max(imageHeight - scrollController.offset, 0);
-        final normalized = newOpacity.normalized(0.0, imageHeight).toDouble();
-        opacity.value = normalized;
-        size.value = normalized;
-      });
-
-      return null;
-    }, [scrollController]);
+    late final StreamController<double> controller;
+    controller = useStreamController<double>(
+      onListen: () {
+        controller.sink.add(0.0);
+      }
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -56,32 +38,23 @@ class HomePage extends HookWidget {
           'Home page',
         ),
       ),
-
-      body: Column(
-        children: [
-          SizeTransition(
-            sizeFactor: size,
-            axis: Axis.vertical,
-            axisAlignment: -1.0,
-            child: FadeTransition(
-              opacity: opacity,
-              child: Image.network(
-                url,
-                height: imageHeight,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(controller: scrollController, itemCount: 100, itemBuilder: (context, index) { 
-              return ListTile(
-                title: Text('Person ${index + 1}',),
+      body: StreamBuilder<double>(
+          stream: controller.stream,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const CircularProgressIndicator();
+            } else {
+              final rotation = snapshot.data ?? 0.0;
+              return GestureDetector(
+                onTap: () {
+                  controller.sink.add(rotation + 10.0);
+                },
+                child: RotationTransition(
+                    turns: AlwaysStoppedAnimation(rotation / 360.0),
+                    child: Center(child: Image.network(url))),
               );
-            }),
-          )
-        ],
-
-      ),
+            }
+          }),
     );
   }
 }
